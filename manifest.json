@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "hermes.openrouter",
+  "name": "Hermes OpenRouter",
+  "version": "1.0.0",
+  "author": "Sven Radetzky",
+  "license": "MIT",
+  "description": "OpenRouter credits, Hermes usage and costs, and a model switcher in one clean bar panel.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "Hermes OpenRouter",
+    "description": "Account balance from openrouter.ai, token usage and estimated spend from Hermes' own session store, and a model selector that writes hermes config model.default.",
+    "category": "AI",
+    "aliases": [
+      "hermes",
+      "openrouter",
+      "model",
+      "usage"
+    ],
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 300
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 30,
+        "max": 3600,
+        "step": 30,
+        "defaultValue": 300
+      }
+    ]
+  }
+}
