@@ -19,6 +19,7 @@ import re
 import sqlite3
 import sys
 import time
+import urllib.error
 import urllib.request
 
 HOME = os.path.expanduser("~")
@@ -100,9 +101,26 @@ def api_key() -> str:
     return ""
 
 
+class _RejectRedirects(urllib.request.HTTPRedirectHandler):
+    """Refuse to follow any HTTP redirect.
+
+    urllib copies the original request's headers (including Authorization)
+    onto redirected requests regardless of the destination host, so following
+    a redirect from the OpenRouter API could disclose the API key to a
+    different host. The OpenRouter endpoints this plugin calls are direct
+    JSON endpoints that never redirect; any 3xx is treated as a failure.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code, msg, headers, fp)
+
+
+_OPENER = urllib.request.build_opener(_RejectRedirects)
+
+
 def fetch_json(url: str, headers: dict, timeout: int = 20):
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with _OPENER.open(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
