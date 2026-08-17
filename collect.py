@@ -187,10 +187,17 @@ def fetch_models() -> dict:
 
 def curated_models(catalogue: dict, current: str):
     """Favourites that exist, the current model, then big-context fillers."""
+    # Defence in depth: only well-formed ids ever leave here. The widget runs
+    # `hermes config set model.default <id>`, so anything beyond a safe
+    # charset (newlines, quotes, spaces, ...) is dropped before it can appear
+    # in a command or a config file.
+    safe_id = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$")
     chosen, seen = [], set()
 
     def add(mid):
         if mid in seen or mid not in catalogue:
+            return
+        if not safe_id.match(mid):
             return
         seen.add(mid)
         chosen.append(mid)

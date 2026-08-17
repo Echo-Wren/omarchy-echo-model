@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "hermes.openrouter",
   "name": "Hermes OpenRouter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Sven Radetzky",
   "license": "MIT",
   "description": "OpenRouter credits, Hermes usage and costs, and a model switcher in one clean bar panel.",

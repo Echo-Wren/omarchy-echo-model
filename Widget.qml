@@ -169,6 +169,12 @@ Panel {
 
   function applyModel(id) {
     if (id === "" || id === root.applyingModel) return
+    // The value lands in the user's Hermes config via `hermes config set`, so
+    // only accept well-formed model ids. This rejects newlines and anything
+    // outside a safe charset that a compromised/malicious OpenRouter model
+    // listing could otherwise inject into configuration.
+    id = String(id)
+    if (!/^[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$/.test(id)) return
     root.applyingModel = id
     applyProcess.command = ["hermes", "config", "set", "model.default", id]
     applyProcess.running = true
