@@ -9,10 +9,12 @@ with a dashboard panel.
 - **Balance** — live remaining credits from `openrouter.ai`, with a
   spent-of-funded meter and a warning when fewer than 10% of funded credits
   are left.
-- **Usage & costs** — tokens and estimated spend for today, the last 7 days,
-  and all time, plus a per-day breakdown (tokens **and** spend side by side)
-  and per-model totals. All numbers come from Hermes' own session store, so
-  they match what Hermes bills.
+- **Usage & costs** — tokens and spend for today, the last 7 days, and all
+  time, plus a per-day breakdown (tokens **and** spend side by side) and
+  per-model totals. Summary costs come from OpenRouter's own billing for
+  this API key (`/auth/key`), so they match the activity monitor; the
+  per-day and per-model breakdowns are Hermes' local estimates, labelled
+  `ESTIMATED`. Token counts always come from Hermes' session store.
 - **Model switcher** — a curated OpenRouter catalogue (deepseek, claude,
   gpt, gemini, grok, qwen, …) with per-1M pricing and context length. Pick
   one and it runs `hermes config set model.default <id>`; new Hermes sessions
