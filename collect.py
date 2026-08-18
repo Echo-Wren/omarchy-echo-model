@@ -155,6 +155,29 @@ def fetch_account(key: str):
         return None
 
 
+def fetch_key_usage(key: str):
+    """Actual billed usage for this API key, from /auth/key.
+
+    OpenRouter's activity monitor shows the account-wide total; the key
+    endpoint splits it per key so the widget can distinguish what Hermes
+    itself actually cost from whatever else the account was used for.
+    Returns {"total":..., "daily":..., "weekly":..., "monthly":...} or None.
+    """
+    if not key:
+        return None
+    try:
+        data = fetch_json(f"{API_BASE}/auth/key", {"Authorization": f"Bearer {key}"})
+        info = data.get("data") or {}
+        return {
+            "total": round(float(info.get("usage") or 0), 4),
+            "daily": round(float(info.get("usage_daily") or 0), 4),
+            "weekly": round(float(info.get("usage_weekly") or 0), 4),
+            "monthly": round(float(info.get("usage_monthly") or 0), 4),
+        }
+    except Exception:
+        return None
+
+
 def fetch_models() -> dict:
     """{id: model} with a 24h on-disk cache so the widget never hammers it."""
     if os.path.isfile(MODELS_CACHE):
@@ -469,6 +492,7 @@ def _atomic_dump(obj, dest):
 def main():
     key = api_key()
     account = fetch_account(key)
+    key_usage = fetch_key_usage(key)
 
     catalogue = fetch_models()
     model_id, provider = current_model()
@@ -486,6 +510,7 @@ def main():
             "total": round(account[0], 2) if account else None,
             "used": round(account[1], 2) if account else None,
             "remaining": round(account[2], 2) if account else None,
+            "keyUsage": key_usage,
         },
         "hermes": {
             "home": HERMES_HOME,
