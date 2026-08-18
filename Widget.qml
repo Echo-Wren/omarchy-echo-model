@@ -35,6 +35,7 @@ Panel {
   readonly property var api: stats && stats.api ? stats.api : null
   readonly property var usage: stats && stats.usage ? stats.usage : null
   readonly property var hermes: stats && stats.hermes ? stats.hermes : null
+  readonly property var keyUsage: api && api.keyUsage ? api.keyUsage : null
   readonly property var lastSessions: usage && Array.isArray(usage.recentSessions) ? usage.recentSessions : []
   readonly property var models: stats && Array.isArray(stats.models) ? stats.models : []
 
@@ -77,6 +78,15 @@ Panel {
     if (v >= 1e6) return (v / 1e6).toFixed(0) + "M"
     if (v >= 1e3) return (v / 1e3).toFixed(0) + "k"
     return v > 0 ? String(v) : ""
+  }
+
+  // Preferred cost for a summary card: OpenRouter's actual billed figure for
+  // this key when available, else the local Hermes estimate.
+  // kind: keyUsage field name ("daily"|"weekly"|"total"|"monthly").
+  function cardCost(kind, estimate) {
+    var k = root.keyUsage
+    if (k && isFinite(Number(k[kind]))) return Number(k[kind])
+    return Number(estimate || 0)
   }
 
   // "deepseek/deepseek-v4-flash-0731" -> "deepseek-v4-flash-0731"
@@ -402,7 +412,7 @@ Panel {
             Text {
               width: parent.width
               text: root.api && root.api.ok
-                ? root.fmtMoney(root.api.used) + " spent of " + root.fmtMoney(root.funded) + " funded"
+                ? root.fmtMoney(root.api.used) + " spent of " + root.fmtMoney(root.funded) + " funded (whole account)"
                 : ""
               color: root.dim
               font.family: root.fontFamily
@@ -421,9 +431,9 @@ Panel {
 
             Repeater {
               model: root.usage ? [
-                { title: "TODAY", tokens: root.usage.today.tokens, cost: root.usage.today.cost },
-                { title: "7 DAYS", tokens: root.usage.week.tokens, cost: root.usage.week.cost },
-                { title: "ALL TIME", tokens: root.usage.allTime.tokens, cost: root.usage.allTime.cost }
+                { title: "TODAY", tokens: root.usage.today.tokens, cost: root.cardCost("daily", root.usage.today.cost) },
+                { title: "7 DAYS", tokens: root.usage.week.tokens, cost: root.cardCost("weekly", root.usage.week.cost) },
+                { title: "ALL TIME", tokens: root.usage.allTime.tokens, cost: root.cardCost("total", root.usage.allTime.cost) }
               ] : []
 
               StatCard {
@@ -436,11 +446,29 @@ Panel {
             }
           }
 
+          Text {
+            width: parent.width
+            visible: root.keyUsage !== null
+            text: "Costs billed by OpenRouter (this key) — token counts from Hermes"
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+          }
+
+          Text {
+            width: parent.width
+            visible: root.keyUsage === null
+            text: "Costs estimated from Hermes' local records (OpenRouter billing unavailable)"
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+          }
+
           // ---------- Tokens by day ----------
           PanelSeparator { foreground: root.foreground }
           PanelSectionHeader {
             width: parent.width
-            text: "TOKENS BY DAY"
+            text: "TOKENS BY DAY" + (root.keyUsage !== null ? " · ESTIMATED" : "")
             foreground: root.foreground
             fontFamily: root.fontFamily
           }
@@ -459,7 +487,7 @@ Panel {
           PanelSeparator { foreground: root.foreground }
           PanelSectionHeader {
             width: parent.width
-            text: "MODELS · 30 DAYS"
+            text: "MODELS · 30 DAYS" + (root.keyUsage !== null ? " · ESTIMATED" : "")
             foreground: root.foreground
             fontFamily: root.fontFamily
           }
