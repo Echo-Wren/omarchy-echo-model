@@ -83,18 +83,22 @@ def main():
             "input": inp,
             "output": out,
             "cache": cache,
-            "cost": 0.0,
+            "cost": money(m.get("cost")),
         })
     by_model.sort(key=lambda r: -r["tokens"])
 
     by_day = [{
         "date": d.get("date", ""),
         "tokens": int0(d.get("messageCount")),
-        "cost": 0.0,
+        "cost": money(d.get("cost")),
     } for d in (rec.get("recentDays") or [])]
 
     all_time = int0((rec.get("echo") or {}).get("tokensAllTime"))
     today_tokens = int0(rec.get("todayTotalTokens"))
+    ech = rec.get("echo") or {}
+    cost_today = money(ech.get("costToday"))
+    cost_week = money(ech.get("costWeek"))
+    cost_all = money(ech.get("costAllTime"))
 
     stats = {
         "schemaVersion": 1,
@@ -119,9 +123,9 @@ def main():
             "profiles": ["remote"],
         },
         "usage": {
-            "today": {"tokens": today_tokens, "cost": 0.0, "calls": int0(rec.get("todayPrompts"))},
-            "week": {"tokens": sum(d["tokens"] for d in by_day), "cost": 0.0, "calls": 0},
-            "allTime": {"tokens": all_time, "cost": 0.0, "calls": 0},
+            "today": {"tokens": today_tokens, "cost": cost_today, "calls": int0(rec.get("todayPrompts"))},
+            "week": {"tokens": sum(d["tokens"] for d in by_day), "cost": cost_week, "calls": 0},
+            "allTime": {"tokens": all_time, "cost": cost_all, "calls": 0},
             "byDay": by_day,
             "byModel": by_model,
             "recentSessions": [],
