@@ -24,9 +24,15 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin validate "$DEST" || { echo "manifest validation failed" >&2; exit 1; }
 fi
 
-# 2. Make sure the shell sees the plugin.
-echo "== rescanning shell plugins"
-omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+# 2. Load the copied QML. A plugin rescan discovers new plugins but does not
+# re-execute an already-loaded widget, so updates need a shell restart.
+if command -v omarchy-restart-shell >/dev/null 2>&1; then
+  echo "== restarting shell to load plugin code"
+  omarchy-restart-shell
+else
+  echo "== rescanning shell plugins"
+  omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+fi
 
 # 3. Add the widget to the bar (right section, next to omarchy.agents).
 if omarchy plugin list --json 2>/dev/null | grep -q "\"$PLUGIN_ID\""; then
@@ -48,5 +54,5 @@ echo "Verify:"
 echo "  omarchy plugin list --json | grep $PLUGIN_ID"
 echo "  grep -A2 openrouter ~/.config/omarchy/shell.json"
 echo
-echo "If the icon is missing, reload with: omarchy-shell shell rescanPlugins"
+echo "If the icon is missing, reload with: omarchy-restart-shell"
 echo "Remove with:                             omarchy plugin disable $PLUGIN_ID"

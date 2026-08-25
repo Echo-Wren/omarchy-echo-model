@@ -38,6 +38,8 @@ Panel {
   readonly property var keyUsage: api && api.keyUsage ? api.keyUsage : null
   readonly property var lastSessions: usage && Array.isArray(usage.recentSessions) ? usage.recentSessions : []
   readonly property var models: stats && Array.isArray(stats.models) ? stats.models : []
+  readonly property int profileCount: hermes ? Math.max(1, Number(hermes.profileCount || 1)) : 1
+  readonly property string profileScope: profileCount === 1 ? "1 Hermes profile" : profileCount + " Hermes profiles"
 
   readonly property string currentModel: hermes ? String(hermes.model || "") : ""
   readonly property string updatedAt: stats ? String(stats.updated || "") : ""
@@ -121,7 +123,7 @@ Panel {
 
   function statusText() {
     if (api && !api.configured)
-      return "No OPENROUTER_API_KEY in " + (hermes ? hermes.home : "~/.hermes") + "/.env — add it to see your balance."
+      return "No OPENROUTER_API_KEY in any Hermes profile .env — add one to see your balance."
     if (api && api.configured && !api.ok)
       return "OpenRouter API unreachable — balance unavailable. Usage and the model list still work."
     return ""
@@ -179,14 +181,14 @@ Panel {
 
   function applyModel(id) {
     if (id === "" || id === root.applyingModel) return
-    // The value lands in the user's Hermes config via `hermes config set`, so
+    // The value lands in the default Hermes config via `hermes -p default`, so
     // only accept well-formed model ids. This rejects newlines and anything
     // outside a safe charset that a compromised/malicious OpenRouter model
     // listing could otherwise inject into configuration.
     id = String(id)
     if (!/^[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$/.test(id)) return
     root.applyingModel = id
-    applyProcess.command = ["hermes", "config", "set", "model.default", id]
+    applyProcess.command = ["hermes", "-p", "default", "config", "set", "model.default", id]
     applyProcess.running = true
   }
 
@@ -449,7 +451,7 @@ Panel {
           Text {
             width: parent.width
             visible: root.keyUsage !== null
-            text: "Costs billed by OpenRouter (this key) — token counts from Hermes"
+            text: "Costs billed by OpenRouter · tokens from " + root.profileScope
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -458,7 +460,7 @@ Panel {
           Text {
             width: parent.width
             visible: root.keyUsage === null
-            text: "Costs estimated from Hermes' local records (OpenRouter billing unavailable)"
+            text: "Consolidated local estimates · tokens from " + root.profileScope
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -468,7 +470,7 @@ Panel {
           PanelSeparator { foreground: root.foreground }
           PanelSectionHeader {
             width: parent.width
-            text: "TOKENS BY DAY" + (root.keyUsage !== null ? " · ESTIMATED" : "")
+            text: "TOKENS BY DAY · ESTIMATED"
             foreground: root.foreground
             fontFamily: root.fontFamily
           }
@@ -487,7 +489,7 @@ Panel {
           PanelSeparator { foreground: root.foreground }
           PanelSectionHeader {
             width: parent.width
-            text: "MODELS · 30 DAYS" + (root.keyUsage !== null ? " · ESTIMATED" : "")
+            text: "MODELS · 30 DAYS · ESTIMATED"
             foreground: root.foreground
             fontFamily: root.fontFamily
           }
@@ -541,7 +543,7 @@ Panel {
 
           Text {
             width: parent.width
-            text: "Sets " + (root.hermes ? root.hermes.config : "~/.hermes/config.yaml") + "\nmodel.default — new sessions use it; open sessions keep theirs."
+            text: "Sets the default profile: " + (root.hermes ? root.hermes.config : "~/.hermes/config.yaml") + "\nmodel.default — new sessions use it; open sessions keep theirs."
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -557,7 +559,7 @@ Panel {
           PanelSectionHeader {
             visible: root.lastSessions.length > 0
             width: parent.width
-            text: "RECENT SESSIONS"
+            text: "RECENT SESSIONS · ALL PROFILES"
             foreground: root.foreground
             fontFamily: root.fontFamily
           }
@@ -874,7 +876,7 @@ Panel {
 
     Text {
       id: sessionTitle
-      text: row ? row.title : ""
+      text: row ? "[" + String(row.profile || "default") + "] " + row.title : ""
       color: root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption

@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "hermes.openrouter",
   "name": "Hermes OpenRouter",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Sven Radetzky",
   "license": "MIT",
-  "description": "OpenRouter credits, Hermes usage and costs, and a model switcher in one clean bar panel.",
+  "description": "OpenRouter credits, consolidated Hermes profile usage and costs, and a model switcher in one clean bar panel.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Hermes OpenRouter",
-    "description": "Account balance from openrouter.ai, token usage and estimated spend from Hermes' own session store, and a model selector that writes hermes config model.default.",
+    "description": "Account balance from openrouter.ai, consolidated token usage and spend from every Hermes profile, and a default-profile model selector.",
     "category": "AI",
     "aliases": [
       "hermes",
