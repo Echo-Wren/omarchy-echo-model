@@ -91,6 +91,7 @@ def main():
         "date": d.get("date", ""),
         "tokens": int0(d.get("messageCount")),
         "cost": money(d.get("cost")),
+        "costExact": bool(d.get("costExact")),
     } for d in (rec.get("recentDays") or [])]
 
     all_time = int0((rec.get("echo") or {}).get("tokensAllTime"))
