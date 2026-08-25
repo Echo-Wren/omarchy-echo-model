@@ -262,6 +262,8 @@ Panel {
     bar: root.bar
     text: ""  // logo image below; keepSpace keeps the slot sized
     keepSpace: true
+    implicitWidth: 22  // empty text would collapse the slot to 0
+    implicitHeight: 22
     active: root.alarming
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.RightButton) { if (root.bar) root.bar.run("xdg-open https://platform.deepseek.com/usage") }
