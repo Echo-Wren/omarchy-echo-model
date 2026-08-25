@@ -422,6 +422,15 @@ Panel {
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
             }
+
+            Text {
+              width: parent.width
+              text: "Whole DeepSeek account — includes all API keys"
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              opacity: 0.8
+            }
           }
 
           // ---------- Quick stats ----------
@@ -437,7 +446,7 @@ Panel {
               model: root.usage ? [
                 { title: "TODAY", tokens: root.usage.today.tokens, cost: root.cardCost("daily", root.usage.today.cost) },
                 { title: "7 DAYS", tokens: root.usage.week.tokens, cost: root.cardCost("weekly", root.usage.week.cost) },
-                { title: "ALL TIME", tokens: root.usage.allTime.tokens, cost: root.cardCost("total", root.usage.allTime.cost) }
+                { title: "30 DAYS", tokens: root.usage.month30.tokens, cost: root.cardCost("monthly", root.usage.month30.cost) }
               ] : []
 
               StatCard {

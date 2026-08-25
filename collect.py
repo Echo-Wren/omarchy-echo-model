@@ -99,6 +99,8 @@ def main():
     cost_today = money(ech.get("costToday"))
     cost_week = money(ech.get("costWeek"))
     cost_all = money(ech.get("costAllTime"))
+    tokens30 = int0(ech.get("tokens30"))
+    cost30 = money(ech.get("cost30"))
 
     stats = {
         "schemaVersion": 1,
@@ -125,6 +127,7 @@ def main():
         "usage": {
             "today": {"tokens": today_tokens, "cost": cost_today, "calls": int0(rec.get("todayPrompts"))},
             "week": {"tokens": sum(d["tokens"] for d in by_day), "cost": cost_week, "calls": 0},
+            "month30": {"tokens": tokens30, "cost": cost30, "calls": 0},
             "allTime": {"tokens": all_time, "cost": cost_all, "calls": 0},
             "byDay": by_day,
             "byModel": by_model,
