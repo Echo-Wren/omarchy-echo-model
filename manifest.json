@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "hermes.openrouter",
-  "name": "Hermes OpenRouter",
-  "version": "1.2.0",
-  "author": "Sven Radetzky",
+  "id": "echo.model",
+  "name": "Echo",
+  "version": "1.0.0",
+  "author": "Echo (fork of hermes.openrouter by Sven Radetzky)",
   "license": "MIT",
-  "description": "OpenRouter credits, consolidated Hermes profile usage and costs, and a model switcher in one clean bar panel.",
+  "description": "Echo usage, DeepSeek balance, and a model switcher — remote via the Echo usage bridge (192.168.2.41:8643).",
   "kinds": [
     "bar-widget"
   ],
@@ -13,12 +13,12 @@
     "barWidget": "Widget.qml"
   },
   "barWidget": {
-    "displayName": "Hermes OpenRouter",
-    "description": "Account balance from openrouter.ai, consolidated token usage and spend from every Hermes profile, and a default-profile model selector.",
+    "displayName": "Echo",
+    "description": "Echo usage, DeepSeek balance, and a model selector fed by the remote usage bridge.",
     "category": "AI",
     "aliases": [
-      "hermes",
-      "openrouter",
+      "echo",
+      "deepseek",
       "model",
       "usage"
     ],

@@ -5,13 +5,14 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// hermes.openrouter — OpenRouter credits, Hermes usage/costs, and a model
-// switcher: one bar icon and one panel. All data comes from collect.py next
-// to this file, which writes a single JSON state file this panel watches.
+// echo.model — Echo usage, DeepSeek balance, and a model switcher: one bar
+// icon and one panel. All data comes from collect.py next to this file, which
+// relays the Echo usage bridge (192.168.2.41:8643) into a single JSON state
+// file this panel watches.
 Panel {
   id: root
-  moduleName: "hermes.openrouter"
-  ipcTarget: "hermes.openrouter"
+  moduleName: "echo.model"
+  ipcTarget: "echo.model"
   manageIpc: false
 
   readonly property color foreground: bar ? bar.foreground : Color.foreground
@@ -22,7 +23,7 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
   readonly property string home: Quickshell.env("HOME") || ""
-  readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/hermes-openrouter"
+  readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/echo-model"
   readonly property string stateFile: stateDir + "/stats.json"
   readonly property string scriptPath: String(Qt.resolvedUrl("collect.py")).replace(/^file:\/\//, "")
 
@@ -45,8 +46,11 @@ Panel {
   readonly property string updatedAt: stats ? String(stats.updated || "") : ""
   readonly property real remaining: api && api.ok && isFinite(api.remaining) ? api.remaining : -1
   readonly property real funded: api && api.ok && isFinite(api.total) ? api.total : 0
-  readonly property real ratio: funded > 0 ? clamp(remaining / funded, 0, 1) : -1
-  readonly property bool alarming: remaining >= 0 && ratio <= 0.1
+  readonly property real spent: api && api.ok && isFinite(api.used) ? api.used : 0
+  // The meter shows the USED fraction of the topped-up balance (grows as
+  // credits are consumed), while the alarm fires on the remaining fraction.
+  readonly property real ratio: funded > 0 ? clamp(spent / funded, 0, 1) : -1
+  readonly property bool alarming: remaining >= 0 && funded > 0 && (remaining / funded) <= 0.1
 
   // The bar sizes the slot from the widget root's implicit size; without
   // this the button (anchored to the root) collapses to 0x0 and nothing
@@ -82,7 +86,7 @@ Panel {
     return v > 0 ? String(v) : ""
   }
 
-  // Preferred cost for a summary card: OpenRouter's actual billed figure for
+  // Preferred cost for a summary card: the bridge's spent figure for
   // this key when available, else the local Hermes estimate.
   // kind: keyUsage field name ("daily"|"weekly"|"total"|"monthly").
   function cardCost(kind, estimate) {
@@ -117,15 +121,13 @@ Panel {
   }
 
   function heroMeta() {
-    if (!api || !api.ok) return "OpenRouter · " + (api && api.configured ? "unreachable" : "no key")
-    return "OpenRouter · " + fmtMoney(remaining) + " remaining"
+    if (!api || !api.ok) return "DeepSeek · " + (api && api.configured ? "bridge unreachable" : "no data")
+    return "DeepSeek · " + fmtMoney(remaining) + " remaining"
   }
 
   function statusText() {
-    if (api && !api.configured)
-      return "No OPENROUTER_API_KEY in any Hermes profile .env — add one to see your balance."
     if (api && api.configured && !api.ok)
-      return "OpenRouter API unreachable — balance unavailable. Usage and the model list still work."
+      return "Echo usage bridge unreachable — balance unavailable. Usage and the model list still work."
     return ""
   }
 
@@ -181,14 +183,14 @@ Panel {
 
   function applyModel(id) {
     if (id === "" || id === root.applyingModel) return
-    // The value lands in the default Hermes config via `hermes -p default`, so
-    // only accept well-formed model ids. This rejects newlines and anything
-    // outside a safe charset that a compromised/malicious OpenRouter model
-    // listing could otherwise inject into configuration.
+    // The switch is POSTed to the Echo usage bridge /model endpoint by the
+    // local `echo-model` script (which carries the switch token). Only accept
+    // well-formed model ids — this rejects newlines and anything outside a
+    // safe charset that a compromised model listing could inject.
     id = String(id)
     if (!/^[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$/.test(id)) return
     root.applyingModel = id
-    applyProcess.command = ["hermes", "-p", "default", "config", "set", "model.default", id]
+    applyProcess.command = ["bash", "-c", "exec ~/.local/bin/echo-model " + id]
     applyProcess.running = true
   }
 
@@ -257,10 +259,10 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: "$"
+    text: "E"
     active: root.alarming
     onPressed: function(buttonCode) {
-      if (buttonCode === Qt.RightButton) { if (root.bar) root.bar.run("xdg-open https://openrouter.ai/settings/credits") }
+      if (buttonCode === Qt.RightButton) { if (root.bar) root.bar.run("xdg-open https://platform.deepseek.com/usage") }
       else if (buttonCode === Qt.MiddleButton) root.refreshNow()
       else root.toggle()
     }
@@ -328,7 +330,7 @@ Panel {
                 height: Style.font.display
                 Text {
                   anchors.centerIn: parent
-                  text: "$"
+                  text: "E"
                   color: root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.display
@@ -414,7 +416,7 @@ Panel {
             Text {
               width: parent.width
               text: root.api && root.api.ok
-                ? root.fmtMoney(root.api.used) + " spent of " + root.fmtMoney(root.funded) + " funded (whole account)"
+                ? root.fmtMoney(root.api.used) + " spent of " + root.fmtMoney(root.funded) + " funded"
                 : ""
               color: root.dim
               font.family: root.fontFamily
@@ -451,7 +453,7 @@ Panel {
           Text {
             width: parent.width
             visible: root.keyUsage !== null
-            text: "Costs billed by OpenRouter · tokens from " + root.profileScope
+            text: "DeepSeek balance · usage from the Echo bridge"
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -543,7 +545,7 @@ Panel {
 
           Text {
             width: parent.width
-            text: "Sets the default profile: " + (root.hermes ? root.hermes.config : "~/.hermes/config.yaml") + "\nmodel.default — new sessions use it; open sessions keep theirs."
+            text: "Switches Echo's model through the usage bridge.\nmodel.default — new sessions use it; open sessions keep theirs."
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -624,7 +626,7 @@ Panel {
     }
   }
 
-  // Rounded meter showing the remaining fraction of funded credits.
+  // Rounded meter showing the used fraction of the topped-up balance.
   component Meter: Item {
     id: meter
     property real value: -1

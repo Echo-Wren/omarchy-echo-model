@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Install / re-install the hermes.openrouter bar widget on the Omarchy shell.
+# Install / re-install the echo.model bar widget on the Omarchy shell.
 # Idempotent: safe to re-run after editing the plugin files.
 set -euo pipefail
 
-PLUGIN_ID="hermes.openrouter"
+PLUGIN_ID="echo.model"
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 
-echo "== hermes.openrouter installer =="
+echo "== echo.model installer =="
 echo "  source: $SRC_DIR"
 echo "  dest:   $DEST"
 
@@ -49,10 +49,10 @@ python3 "$DEST/collect.py"
 
 # 5. Report.
 echo
-echo "done. The bar should now show a '$' icon next to omarchy.agents."
+echo "done. The bar should now show an 'Echo' icon next to omarchy.agents."
 echo "Verify:"
 echo "  omarchy plugin list --json | grep $PLUGIN_ID"
-echo "  grep -A2 openrouter ~/.config/omarchy/shell.json"
+echo "  grep -A2 echo ~/.config/omarchy/shell.json"
 echo
 echo "If the icon is missing, reload with: omarchy-restart-shell"
 echo "Remove with:                             omarchy plugin disable $PLUGIN_ID"
