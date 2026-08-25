@@ -26,6 +26,7 @@ Panel {
   readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/echo-model"
   readonly property string stateFile: stateDir + "/stats.json"
   readonly property string scriptPath: String(Qt.resolvedUrl("collect.py")).replace(/^file:\/\//, "")
+  readonly property url iconSource: Qt.resolvedUrl("assets/hermes-icon.png")
 
   property var stats: null
   property bool refreshing: false
@@ -259,12 +260,23 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: "E"
+    text: ""  // logo image below; keepSpace keeps the slot sized
+    keepSpace: true
     active: root.alarming
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.RightButton) { if (root.bar) root.bar.run("xdg-open https://platform.deepseek.com/usage") }
       else if (buttonCode === Qt.MiddleButton) root.refreshNow()
       else root.toggle()
+    }
+
+    Image {
+      anchors.centerIn: parent
+      width: 18
+      height: 18
+      source: root.iconSource
+      sourceSize: Qt.size(128, 128)
+      fillMode: Image.PreserveAspectFit
+      smooth: true
     }
   }
 
@@ -328,13 +340,14 @@ Panel {
               Item {
                 width: Style.font.display
                 height: Style.font.display
-                Text {
+                Image {
                   anchors.centerIn: parent
-                  text: "E"
-                  color: root.foreground
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.display
-                  font.bold: true
+                  width: Style.font.display
+                  height: Style.font.display
+                  source: root.iconSource
+                  sourceSize: Qt.size(128, 128)
+                  fillMode: Image.PreserveAspectFit
+                  smooth: true
                 }
               }
             }
