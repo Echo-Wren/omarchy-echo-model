@@ -292,13 +292,18 @@ Panel {
     }
   }
 
-  KeyboardPanel {
+  // PopupCard (xdg-popup, anchored to the bar surface) instead of KeyboardPanel
+  // (layer-shell PanelWindow): KeyboardPanel reparents its window across monitor
+  // bars when toggled on multi-monitor setups, tripping Qt's "Cannot use same
+  // item on different windows" and segfaulting Quickshell on click. PopupCard is
+  // what every stock Omarchy bar widget uses. Tradeoff: no keyboard focus prime,
+  // so the keyCatcher is inert until the popup itself is clicked.
+  PopupCard {
     id: panel
     anchorItem: button
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(392))
     contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight, Style.space(660))
 
