@@ -278,8 +278,8 @@ Panel {
           MultiEffect {
             anchors.fill: parent
             source: logoImg
-            colorOverlay: root.foreground  // theme-aware, like the glyph icons
-            colorOverlayEnabled: true
+            colorization: 1.0  // shell's own tray-icon pattern (no colorOverlayEnabled on this Qt)
+            colorizationColor: root.foreground  // theme-aware, like the glyph icons
           }
         }
       }
@@ -364,8 +364,8 @@ Panel {
                   MultiEffect {
                     anchors.fill: parent
                     source: headerLogo
-                    colorOverlay: root.foreground
-                    colorOverlayEnabled: true
+                    colorization: 1.0
+                    colorizationColor: root.foreground
                   }
                 }
               }
