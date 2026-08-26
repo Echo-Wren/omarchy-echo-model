@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -264,24 +263,13 @@ Panel {
     bar: root.bar
     text: ""  // glyph hidden; the logo renders via iconComponent
     iconComponent: Component {
-      Item {
+      Image {
         anchors.fill: parent
-        visible: logoImg.status === Image.Ready
-        Image {
-          id: logoImg
-          anchors.fill: parent
-          anchors.margins: 1.5  // 13px in the 16px canvas — matches glyph size
-          source: Qt.resolvedUrl("assets/hermes-icon.png")
-          sourceSize: Qt.size(128, 128)
-          fillMode: Image.PreserveAspectFit
-          smooth: true
-          MultiEffect {
-            anchors.fill: parent
-            source: logoImg
-            colorization: 1.0  // shell's own tray-icon pattern (no colorOverlayEnabled on this Qt)
-            colorizationColor: root.foreground  // theme-aware, like the glyph icons
-          }
-        }
+        anchors.margins: 1.5  // 13px in the 16px canvas — matches glyph size
+        source: Qt.resolvedUrl("assets/hermes-icon.png")
+        sourceSize: Qt.size(128, 128)
+        fillMode: Image.PreserveAspectFit
+        smooth: true
       }
     }
     active: root.alarming
@@ -358,7 +346,6 @@ Panel {
                 width: Style.font.display
                 height: Style.font.display
                 Image {
-                  id: headerLogo
                   anchors.centerIn: parent
                   width: Style.font.display
                   height: Style.font.display
@@ -366,12 +353,6 @@ Panel {
                   sourceSize: Qt.size(128, 128)
                   fillMode: Image.PreserveAspectFit
                   smooth: true
-                  MultiEffect {
-                    anchors.fill: parent
-                    source: headerLogo
-                    colorization: 1.0
-                    colorizationColor: root.foreground
-                  }
                 }
               }
             }
