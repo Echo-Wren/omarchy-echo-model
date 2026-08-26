@@ -121,7 +121,7 @@ def main():
             "db": BRIDGE + "/hermes.json",
             "config": "model.default via POST /model",
             "model": current,
-            "provider": "deepseek",
+            "provider": str(ech.get("provider") or "deepseek"),
             "profileCount": 1,
             "profiles": ["remote"],
         },

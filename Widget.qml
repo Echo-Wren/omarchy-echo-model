@@ -122,9 +122,17 @@ Panel {
     return "Hermes"
   }
 
+  function providerLabel() {
+    var p = hermes && hermes.provider ? String(hermes.provider) : "deepseek"
+    if (p === "openrouter") return "OpenRouter"
+    if (p === "deepseek") return "DeepSeek"
+    return p.charAt(0).toUpperCase() + p.slice(1)
+  }
+
   function heroMeta() {
-    if (!api || !api.ok) return "DeepSeek · " + (api && api.configured ? "bridge unreachable" : "no data")
-    return "DeepSeek · " + fmtMoney(remaining) + " remaining"
+    var label = root.providerLabel()
+    if (!api || !api.ok) return label + " · " + (api && api.configured ? "bridge unreachable" : "no data")
+    return label + " · " + fmtMoney(remaining) + " remaining"
   }
 
   function statusText() {
@@ -443,7 +451,7 @@ Panel {
 
             Text {
               width: parent.width
-              text: "Whole DeepSeek account — includes all API keys"
+              text: "Whole " + root.providerLabel() + " account — includes all API keys"
               color: root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
@@ -480,7 +488,7 @@ Panel {
           Text {
             width: parent.width
             visible: root.keyUsage !== null
-            text: "DeepSeek balance · usage from the Echo bridge"
+            text: root.providerLabel() + " balance · usage from the Echo bridge"
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
