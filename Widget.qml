@@ -53,13 +53,12 @@ Panel {
   readonly property real ratio: funded > 0 ? clamp(spent / funded, 0, 1) : -1
   readonly property bool alarming: remaining >= 0 && funded > 0 && (remaining / funded) <= 0.1
 
-  // The bar sizes the slot from the widget root's implicit size. This MUST be
-  // hardcoded: binding it to the button's implicit size (button → root →
-  // anchors.fill → button) forms a cycle that collapses to 0 at bar layout
-  // time, so the slot vanishes with no gap. The popup still maps — which is
-  // why the panel works while the bar slot is missing.
-  implicitWidth: 22
-  implicitHeight: 22
+  // The bar sizes the slot from the widget root's implicit size. Match the
+  // native icon slot (27px) so the button's fixedWidth/iconCanvas center
+  // properly. The button must have visual content (text or iconComponent) —
+  // BarIconButton's hasVisualContent gates whether the bar renders it at all.
+  implicitWidth: Style.bar.iconSlot
+  implicitHeight: Style.bar.iconSlot
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
   function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
@@ -262,25 +261,21 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: ""  // logo image below; keepSpace keeps the slot sized
-    keepSpace: true
-    implicitWidth: 22  // empty text would collapse the slot to 0
-    implicitHeight: 22
+    text: ""  // glyph hidden; the logo renders via iconComponent
+    iconComponent: Component {
+      Image {
+        anchors.fill: parent
+        source: Qt.resolvedUrl("assets/hermes-icon.png")
+        sourceSize: Qt.size(128, 128)
+        fillMode: Image.PreserveAspectFit
+        smooth: true
+      }
+    }
     active: root.alarming
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.RightButton) { if (root.bar) root.bar.run("xdg-open https://platform.deepseek.com/usage") }
       else if (buttonCode === Qt.MiddleButton) root.refreshNow()
       else root.toggle()
-    }
-
-    Image {
-      anchors.centerIn: parent
-      width: 18
-      height: 18
-      source: root.iconSource
-      sourceSize: Qt.size(128, 128)
-      fillMode: Image.PreserveAspectFit
-      smooth: true
     }
   }
 
