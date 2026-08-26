@@ -104,6 +104,18 @@ Panel {
     return slash >= 0 ? s.slice(slash + 1) : s
   }
 
+  // Slashed ids are OpenRouter-routed today (deepseek/..., qwen/...); direct
+  // DeepSeek ids are bare. Tag the row so it can't be mistaken for direct.
+  function modelTag(id) {
+    return String(id || "").indexOf("/") >= 0 ? "OpenRouter" : ""
+  }
+
+  function modelDisplay(id) {
+    var base = root.shortModel(id)
+    var tag = root.modelTag(id)
+    return tag ? base + "  ·  " + tag : base
+  }
+
   function p2(n) {
     n = String(n)
     return n.length < 2 ? "0" + n : n
@@ -784,7 +796,7 @@ Panel {
 
     Text {
       id: modelName
-      text: row && row.model ? root.shortModel(String(row.model)) : ""
+      text: row && row.model ? root.modelDisplay(String(row.model)) : ""
       color: root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall
@@ -846,7 +858,7 @@ Panel {
 
     Text {
       id: optionId
-      text: option.modelId === "" ? "—" : root.shortModel(option.modelId)
+      text: option.modelId === "" ? "—" : root.modelDisplay(option.modelId)
       color: option.applying ? root.dim : root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall

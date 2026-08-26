@@ -138,6 +138,7 @@ def main():
             {
                 "id": m["id"],
                 "name": m.get("name", m["id"]),
+                "provider": m.get("provider", ""),
                 "context": 0,
                 "prompt": "",
                 "completion": "",
