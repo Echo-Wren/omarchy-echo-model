@@ -53,11 +53,13 @@ Panel {
   readonly property real ratio: funded > 0 ? clamp(spent / funded, 0, 1) : -1
   readonly property bool alarming: remaining >= 0 && funded > 0 && (remaining / funded) <= 0.1
 
-  // The bar sizes the slot from the widget root's implicit size; without
-  // this the button (anchored to the root) collapses to 0x0 and nothing
-  // paints even though the popup still maps.
-  implicitWidth: button.implicitWidth
-  implicitHeight: button.implicitHeight
+  // The bar sizes the slot from the widget root's implicit size. This MUST be
+  // hardcoded: binding it to the button's implicit size (button → root →
+  // anchors.fill → button) forms a cycle that collapses to 0 at bar layout
+  // time, so the slot vanishes with no gap. The popup still maps — which is
+  // why the panel works while the bar slot is missing.
+  implicitWidth: 22
+  implicitHeight: 22
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
   function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
