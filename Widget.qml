@@ -33,6 +33,9 @@ Panel {
   property string applyingModel: ""
   property bool cursorActive: false
   property int modelCursor: 0
+  // Accordion state: which provider group is expanded ("" = none).
+  property string expandedProvider: ""
+  property string prevModel: ""
 
   readonly property var api: stats && stats.api ? stats.api : null
   readonly property var usage: stats && stats.usage ? stats.usage : null
@@ -42,6 +45,11 @@ Panel {
   readonly property var models: stats && Array.isArray(stats.models) ? stats.models : []
   readonly property int profileCount: hermes ? Math.max(1, Number(hermes.profileCount || 1)) : 1
   readonly property string profileScope: profileCount === 1 ? "1 Hermes profile" : profileCount + " Hermes profiles"
+
+  // Provider-grouped switcher rows: [{kind:"header",...}] + [{kind:"model",...}]
+  // for the expanded group only. Recomputes when stats/expandedProvider change.
+  readonly property var modelGroups: root.computeModelGroups()
+  readonly property var modelRows: root.buildModelRows()
 
   readonly property string currentModel: hermes ? String(hermes.model || "") : ""
   readonly property string updatedAt: stats ? String(stats.updated || "") : ""
@@ -134,11 +142,19 @@ Panel {
     return "Hermes"
   }
 
-  function providerLabel() {
-    var p = hermes && hermes.provider ? String(hermes.provider) : "deepseek"
+  function providerName(p) {
+    p = String(p || "deepseek")
     if (p === "openrouter") return "OpenRouter"
     if (p === "deepseek") return "DeepSeek"
     return p.charAt(0).toUpperCase() + p.slice(1)
+  }
+
+  function providerLabel() {
+    return root.providerName(root.currentProvider())
+  }
+
+  function currentProvider() {
+    return hermes && hermes.provider ? String(hermes.provider) : "deepseek"
   }
 
   function heroMeta() {
@@ -217,8 +233,73 @@ Panel {
   }
 
   function selectCursor(index) {
-    if (root.models.length === 0) return
-    root.modelCursor = ((index % root.models.length) + root.models.length) % root.models.length
+    var n = root.modelRows.length
+    if (n === 0) return
+    root.modelCursor = ((index % n) + n) % n
+  }
+
+  function clampCursor() {
+    var n = root.modelRows.length
+    if (root.modelCursor >= n) root.modelCursor = Math.max(0, n - 1)
+    if (root.modelCursor < 0) root.modelCursor = 0
+  }
+
+  function computeModelGroups() {
+    var groups = {}
+    var order = []
+    for (var i = 0; i < root.models.length; i++) {
+      var m = root.models[i]
+      var p = String(m && m.provider || "deepseek")
+      if (!groups[p]) { groups[p] = []; order.push(p) }
+      groups[p].push(m)
+    }
+    var out = []
+    for (var g = 0; g < order.length; g++) {
+      var key = order[g]
+      out.push({
+        provider: key,
+        label: root.providerName(key),
+        models: groups[key],
+      })
+    }
+    return out
+  }
+
+  function buildModelRows() {
+    var rows = []
+    var groups = root.modelGroups
+    var cp = root.currentProvider()
+    for (var g = 0; g < groups.length; g++) {
+      var group = groups[g]
+      var expanded = group.provider === root.expandedProvider
+      rows.push({
+        kind: "header",
+        provider: group.provider,
+        label: group.label,
+        count: group.models.length,
+        expanded: expanded,
+        current: group.provider === cp,
+      })
+      if (expanded) {
+        for (var i = 0; i < group.models.length; i++) {
+          var m = group.models[i]
+          rows.push({
+            kind: "model",
+            modelId: String(m.id || ""),
+            sub: root.pricingText(m),
+            ctx: root.fmtCtx(root.val(m, "context", 0)),
+            selected: String(m.id || "") === root.currentModel,
+            provider: group.provider,
+          })
+        }
+      }
+    }
+    return rows
+  }
+
+  function toggleGroup(provider) {
+    root.expandedProvider = (root.expandedProvider === provider) ? "" : provider
+    root.cursorActive = true
   }
 
   Process {
@@ -260,9 +341,19 @@ Panel {
   }
 
   onStatsChanged: {
-    if (root.modelCursor >= root.models.length)
-      root.modelCursor = Math.max(0, root.models.length - 1)
+    var cp = root.currentProvider()
+    // First data: expand the active provider's group. Later: if a switch
+    // landed (current model changed), follow it into its provider group.
+    // Manual expand/collapse persists across refreshes otherwise.
+    if (root.expandedProvider === "")
+      root.expandedProvider = cp
+    else if (root.prevModel !== "" && root.prevModel !== root.currentModel && cp !== root.expandedProvider)
+      root.expandedProvider = cp
+    root.prevModel = root.currentModel
+    root.clampCursor()
   }
+
+  onExpandedProviderChanged: root.clampCursor()
 
   Component.onCompleted: root.refreshNow()
   onOpenedChanged: if (root.opened) root.refreshNow()
@@ -327,8 +418,12 @@ Panel {
                                            Math.max(0, panelFlick.contentHeight - panelFlick.height))
       }
       onActivateRequested: {
-        var entry = root.models[root.modelCursor]
-        if (entry) root.applyModel(String(entry.id))
+        var row = root.modelRows[root.modelCursor]
+        if (!row) return
+        if (row.kind === "header")
+          root.toggleGroup(row.provider)
+        else
+          root.applyModel(row.modelId)
       }
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
@@ -563,20 +658,82 @@ Panel {
 
           Repeater {
             id: modelList
-            model: root.models
+            model: root.modelRows
 
-            ModelOption {
+            delegate: Item {
               required property var modelData
               required property int index
-
               width: contentColumn.width
-              rowIndex: index
-              modelId: String(modelData.id || "")
-              sub: root.pricingText(modelData)
-              ctx: root.fmtCtx(root.val(modelData, "context", 0))
-              selected: String(modelId) === root.currentModel
-              optionCursor: root.cursorActive && index === root.modelCursor
-              applying: String(modelId) === root.applyingModel
+              height: modelData.kind === "header" ? Style.space(28) : Style.space(30)
+
+              // Provider group header — click/Enter toggles the accordion.
+              Rectangle {
+                visible: modelData.kind === "header"
+                anchors.fill: parent
+                radius: Style.cornerRadius
+                color: root.cursorActive && index === root.modelCursor
+                       ? root.track : root.alpha(root.foreground, 0.05)
+
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: root.toggleGroup(modelData.provider)
+                }
+
+                Row {
+                  spacing: Style.space(6)
+                  anchors.left: parent.left
+                  anchors.leftMargin: Style.space(8)
+                  anchors.verticalCenter: parent.verticalCenter
+
+                  Text {
+                    text: modelData.expanded ? "▾" : "▸"
+                    color: root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.bold: true
+                  }
+
+                  Text {
+                    text: modelData.label
+                    color: root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.bold: true
+                  }
+
+                  Text {
+                    text: modelData.count
+                    color: root.dim
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                  }
+                }
+
+                Text {
+                  visible: modelData.current
+                  text: "current"
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                  anchors.right: parent.right
+                  anchors.rightMargin: Style.space(8)
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+              }
+
+              // Model row — only present inside the expanded group.
+              ModelOption {
+                visible: modelData.kind === "model"
+                width: parent.width
+                rowIndex: index
+                modelId: modelData.modelId
+                sub: modelData.sub
+                ctx: modelData.ctx
+                selected: modelData.selected
+                optionCursor: root.cursorActive && index === root.modelCursor
+                applying: String(modelData.modelId) === root.applyingModel
+              }
             }
           }
 
@@ -626,7 +783,7 @@ Panel {
           Text {
             width: parent.width
             topPadding: Style.space(4)
-            text: "r refresh · Enter apply · ←/→ switch · Esc close"
+            text: "r refresh · Enter expand/apply · ←/→ switch · Esc close"
               + (root.updatedAt !== "" ? "   ·   " + root.shortTime(root.updatedAt) : "")
             color: root.dim
             font.family: root.fontFamily
@@ -858,7 +1015,8 @@ Panel {
 
     Text {
       id: optionId
-      text: option.modelId === "" ? "—" : root.modelDisplay(option.modelId)
+      // Group header already names the provider — bare short id here.
+      text: option.modelId === "" ? "—" : root.shortModel(option.modelId)
       color: option.applying ? root.dim : root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall
