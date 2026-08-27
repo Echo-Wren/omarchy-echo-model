@@ -279,6 +279,8 @@ Panel {
         count: group.models.length,
         expanded: expanded,
         current: group.provider === cp,
+        // Uniform fields — delegate always reads them, so no undefined refs.
+        modelId: "", sub: "", ctx: "", selected: false,
       })
       if (expanded) {
         for (var i = 0; i < group.models.length; i++) {
@@ -290,6 +292,8 @@ Panel {
             ctx: root.fmtCtx(root.val(m, "context", 0)),
             selected: String(m.id || "") === root.currentModel,
             provider: group.provider,
+            // Uniform fields — delegate always reads them, so no undefined refs.
+            label: "", count: 0, expanded: false, current: false,
           })
         }
       }
